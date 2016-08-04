@@ -1,0 +1,123 @@
+---
+title: "DQe-c Aggregated Report"
+output: 
+  html_document: 
+    highlight: espresso
+    toc: yes
+---
+
+
+```{r, echo=FALSE, include=FALSE}
+require(data.table);require(dplyr);require(ggplot2);require(gridExtra);require(rmarkdown);require(knitr):require(plotly);require(DT)
+path2 = "..." #set the path to where DQe-c report files from individual databases are saved
+tables <- data.frame(tab_names=list.files(path2))
+tables$type <- substr(tables$tab_names, 0,4)
+```
+
+```{r setup, include=FALSE}
+opts_chunk$set(dev = 'pdf')
+```
+
+##The Overall Status of Missingness in Data 
+
+### Figure 1. Overall missingness across OMOP tables and columns
+The figures bolow illustrate the overall missingness ration for each column and table of latest OMOP database all together.
+```{r, echo=FALSE, include=FALSE}
+## DQ_M
+names <- tables[(tables$type == "DQ_M"),"tab_names"]
+lk1 <- list()
+for (n in 1:length(names)) {
+  lk1[[n]] = data.frame(read.csv(paste0(path2,"/",names[n])))
+}
+DQ_M <- rbindlist(lk1)
+
+lateDQM <- DQ_M %>% group_by(organization) %>% summarise(maxdate = max(test_date))
+lateDQM$load <- paste0(lateDQM$organization,lateDQM$maxdate)
+
+DQ_M$load <- paste0(DQ_M$organization,DQ_M$test_date)
+
+DQ_M_late <- select(subset(DQ_M,DQ_M$load %in% c(lateDQM$load)), TabNam,ColNam,test_date,FRQ,UNIQFRQ,MS1_FRQ,MS2_FRQ,MSs_PERC,organization)      
+
+DQ_M_late_agg <- DQ_M_late %>% 
+  group_by(TabNam,ColNam) %>% 
+  summarise(FRQ = sum(FRQ),UNIQFRQ = sum(UNIQFRQ),MS1_FRQ = sum(MS1_FRQ),MS2_FRQ = sum(MS2_FRQ))
+
+DQ_M_late$MSs_PERC <- (round((DQ_M_late$MS1_FRQ+DQ_M_late$MS2_FRQ)/DQ_M_late$FRQ,2))
+DQ_M_late_agg$MSs_PERC <- (round((DQ_M_late_agg$MS1_FRQ+DQ_M_late_agg$MS2_FRQ)/DQ_M_late_agg$FRQ,2))
+DQ_M_late_agg$test_date <- as.character(format(Sys.Date(),"%m-%d-%Y"))
+DQ_M_late_agg$organization <- "agg"
+```
+
+```{r, echo=FALSE, warning = FALSE, fig.align='center', fig.width= 10, fig.height= 25, dpi=300}
+ggplot(DQ_M_late_agg, aes(x=MSs_PERC, y=ColNam,label = MSs_PERC)) +
+  geom_point(data=DQ_M_late,aes(x=MSs_PERC, y=ColNam),
+             fill="gray",alpha = 0.3, shape = 15, size = 3, stroke= 0) +
+  geom_point(aes(fill = MSs_PERC),alpha = 0.8, shape = 22, size = 4, stroke= 0.5) +
+  # geom_text(vjust = 3, hjust = .5, nudge_y = 0, size = 4)+
+  facet_wrap( ~ TabNam, scale="free_y", ncol = 1) +
+  scale_fill_gradient(limits=c(0, 1),low="#FFFAF0", high="#EE2C2C", guide=F ,na.value="white")+
+  theme(panel.grid.major.x = element_line(colour = "gray"),
+        axis.text.x = element_text(angle = 0, hjust = 1),
+        axis.text.y = element_text(angle = 0, hjust = 1)) +
+  xlab("Ratio of Missing Data") + ylab("Column Name")
+
+```
+
+
+### Figure 2. Overall missingness in key indicators
+
+```{r, echo=FALSE, include=FALSE}
+###with
+names <- tables[(tables$type == "with"),"tab_names"]
+lk2 <- list()
+for (n in 1:length(names)) {
+  lk2[[n]] = data.frame(read.csv(paste0(path2,"/",names[n])))
+}
+with <- rbindlist(lk2)
+
+with$load <- paste0(with$organization,with$test_date)
+
+late <- with %>% group_by(organization) %>% summarise(maxdate = max(test_date))
+late$load <- paste0(late$organization,late$maxdate)
+
+
+withlate <- select(subset(with,with$load %in% c(late$load)), group,missing,missingpop,denom,perc,organization,test_date)      
+
+withlate_agg <- withlate %>% group_by(group) %>% summarise(missingpop = sum(missingpop),denom = sum(denom))
+
+percent <- function(x, digits = 2, format = "f", ...) {
+  paste0(formatC(x, format = format, digits = digits, ...), "%")
+}
+
+withlate_agg$missing <- round((withlate_agg$missingpop/withlate_agg$denom),4)*100
+withlate_agg$perc <- percent(withlate_agg$missing)
+withlate_agg$organization <- "agg"
+withlate_agg$test_date <- as.character(format(Sys.Date(),"%m-%d-%Y"))
+```
+
+```{r, echo=FALSE, warning = FALSE, fig.align='center', fig.width= 10, fig.height= 10, dpi=300}
+ggplot(withlate_agg, aes(x=missing,y=reorder(group,-missing),label = perc)) + 
+  geom_point(aes(fill = missing),shape = 21, colour = "black",  size = 8, stroke = 3, alpha = 0.9) +
+  geom_point(data=withlate, aes(x=missing,y=reorder(group,-missing)),
+             shape = 21, colour = "black",  size = 4, stroke = 3, alpha = 0.3) +
+  geom_text(vjust = 3, hjust = .5, nudge_y = 0, size = 4)+
+  
+  scale_fill_gradient(limits=c(0, 100),low="#FFFAF0", high="#EE2C2C", guide=F,na.value="white")+
+  # theme_grey(base_size = base_size) + 
+  labs(x = "", y = "") +
+  scale_x_continuous(limits = c(0, 100)) + 
+  theme_minimal() +
+  theme(panel.grid.major.y = element_line(color = "gray",size = 2.5),
+        panel.grid.major.x = element_line(colour = "black", linetype = "dotted"),
+        axis.text.y=element_text(size=20, face="bold")) 
+
+```
+
+
+##info
+This is an add-on to DQe-c report version 1.7
+
+For questions and/or inquiries email: `hestiri@uw.edu`
+
+#####aggregated report was generated on `r Sys.Date()` 
+
