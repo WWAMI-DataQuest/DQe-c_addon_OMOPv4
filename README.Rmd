@@ -1,0 +1,10 @@
+---
+title: "README"
+author: "Hossein Estiri"
+output: html_document
+---
+
+This feature is an add-on to DQe-c. It captures DQe-c report files that have been generated through individual runs of the program on each database and produces an aggregated dashboard.
+The main purpose of using this add-on is: when missingness test is intended in for multiple organizations, running the test on an aggregated database could be computationally inefficient.This add-on uses specific report files (`DQ_M_...`, `with_...` files) to generate an overall, which is basically a reproduction of the main elements of DQe-c report for the aggregated database.
+
+For questions and/or inquiries email: `hestiri@uw.edu`
