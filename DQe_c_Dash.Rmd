@@ -9,6 +9,8 @@ output:
 
 ```{r, echo=FALSE, include=FALSE}
 require(data.table);require(dplyr);require(ggplot2);require(gridExtra);require(rmarkdown);require(knitr):require(plotly);require(DT)
+detach(package:plyr)
+
 path2 = "..." #set the path to where DQe-c report files from individual databases are saved
 tables <- data.frame(tab_names=list.files(path2))
 tables$type <- substr(tables$tab_names, 0,4)
@@ -30,9 +32,10 @@ for (n in 1:length(names)) {
   lk1[[n]] = data.frame(read.csv(paste0(path2,"/",names[n])))
 }
 DQ_M <- rbindlist(lk1)
+DQ_M$test_date <- as.Date(DQ_M$test_date, format = "%m/%d/%Y")
 
-lateDQM <- DQ_M %>% group_by(organization) %>% summarise(maxdate = max(test_date))
-lateDQM$load <- paste0(lateDQM$organization,lateDQM$maxdate)
+lateDQM <- aggregate(DQ_M$test_date, by = list(DQ_M$organization), max)
+lateDQM$load <- paste0(lateDQM$Group.1,lateDQM$x)
 
 DQ_M$load <- paste0(DQ_M$organization,DQ_M$test_date)
 
