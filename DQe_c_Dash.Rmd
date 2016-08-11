@@ -9,7 +9,7 @@ output:
 
 ```{r, echo=FALSE, include=FALSE}
 require(data.table);require(dplyr);require(ggplot2);require(gridExtra);require(rmarkdown);require(knitr):require(plotly);require(DT)
-detach(package:plyr)
+# detach(package:plyr) ## if plyr is installed, dplyr aggregates may not work!
 
 path2 = "..." #set the path to where DQe-c report files from individual databases are saved
 tables <- data.frame(tab_names=list.files(path2))
