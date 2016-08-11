@@ -3,7 +3,6 @@
 if (!require("data.table")) install.packages('data.table')
 if (!require("devtools")) install.packages('devtools')
 if (!require("dplyr")) install.packages('dplyr')
-if (!require("plyr")) install.packages('plyr')
 if (!require("DT")) devtools::install_github('rstudio/DT')
 if (!require("ggplot2")) install.packages('ggplot2')
 if (!require("gridExtra")) install.packages('gridExtra')
