@@ -1,5 +1,5 @@
 
-### Install and load all libraries 
+### Install and load all libraries. 
 if (!require("data.table")) install.packages('data.table')
 if (!require("devtools")) install.packages('devtools')
 if (!require("dplyr")) install.packages('dplyr')
