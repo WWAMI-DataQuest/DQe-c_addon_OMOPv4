@@ -125,7 +125,5 @@ ggplot(withlate_agg, aes(x=missing,y=reorder(group,-missing),label = perc)) +
 ##info
 This is an add-on to DQe-c report version 1.7
 
-For questions and/or inquiries email: `hestiri@uw.edu`
-
 #####aggregated report was generated on `r Sys.Date()` 
 
