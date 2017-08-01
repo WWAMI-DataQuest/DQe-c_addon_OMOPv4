@@ -11,13 +11,13 @@ output:
 require(data.table);require(dplyr);require(ggplot2);require(gridExtra);require(rmarkdown);require(knitr):require(plotly);require(DT)
 # detach(package:plyr) ## if plyr is installed, dplyr aggregates may not work!
 
-path2 = "..." #set the path to where DQe-c report files from individual databases are saved
+path2 = "./reports" #set the path to where DQe-c report files from individual databases are saved
 tables <- data.frame(tab_names=list.files(path2))
 tables$type <- substr(tables$tab_names, 0,4)
 ```
 
 ```{r setup, include=FALSE}
-opts_chunk$set(dev = 'pdf')
+opts_chunk$set(dev = 'png')
 ```
 
 ##The Overall Status of Missingness in Data 
@@ -78,10 +78,15 @@ for (n in 1:length(names)) {
 }
 with <- rbindlist(lk2)
 
+#with$load <- paste0(with$organization,with$test_date)
 with$load <- paste0(with$organization,with$test_date)
 
-late <- with %>% group_by(organization) %>% summarise(maxdate = max(test_date))
-late$load <- paste0(late$organization,late$maxdate)
+# http://genomicsclass.github.io/book/pages/dplyr_tutorial.html
+late <- with %>% group_by(organization) %>% summarise(maxdate = max(as.Date(test_date, "%m-%d-%Y")))
+#late <- with %>% group_by(organization) %>% summarise(maxdate = max(test_date))
+#late <- with %>% group_by(organization) %>% summarise(maxdate = '10-19-2016')
+late$load <- paste0(late$organization, as.character(format(late$maxdate,"%m-%d-%Y")))
+#late$load <- paste0(late$organization,late$maxdate)
 
 
 withlate <- select(subset(with,with$load %in% c(late$load)), group,missing,missingpop,denom,perc,organization,test_date)      
